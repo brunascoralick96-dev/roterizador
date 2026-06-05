@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Roterizador — Audiovisual</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e4e2da;
+    --border-hover: #c8c5bb;
+    --text: #1a1917;
+    --text-muted: #6b6860;
+    --text-hint: #a09d96;
+    --accent: #1a1917;
+    --accent-fg: #ffffff;
+    --badge-rascunho-bg: #f0efea;
+    --badge-rascunho-fg: #6b6860;
+    --badge-revisao-bg: #fef3e2;
+    --badge-revisao-fg: #92520a;
+    --badge-aprovado-bg: #e8f5e9;
+    --badge-aprovado-fg: #2e6b30;
+    --danger: #c0392b;
+    --danger-bg: #fdf0ef;
+    --info-bg: #eef4fd;
+    --info-fg: #1a4d8f;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+
+  /* CONFIG */
+  .config-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .config-box { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 2.5rem; width: 100%; max-width: 460px; box-shadow: var(--shadow); }
+  .config-box h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .config-box h1 svg { opacity: 0.7; }
+  .config-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 1.75rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 500; }
+  .field input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; }
+  .field input:focus { border-color: var(--accent); }
+  .btn-enter { width: 100%; padding: 11px; background: var(--accent); color: var(--accent-fg); border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: opacity 0.15s; }
+  .btn-enter:hover { opacity: 0.85; }
+  .config-error { color: var(--danger); font-size: 13px; margin-top: 8px; }
+
+  /* LAYOUT */
+  #app { display: none; min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; flex-shrink: 0; display: flex; flex-direction: column; }
+  .logo { font-size: 16px; font-weight: 700; margin-bottom: 2rem; padding: 0 8px; display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; color: var(--text-muted); margin-bottom: 2px; transition: background 0.12s, color 0.12s; user-select: none; }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--bg); color: var(--text); font-weight: 600; }
+  .nav-item svg { flex-shrink: 0; opacity: 0.7; }
+  .sidebar-bottom { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .sidebar-bottom span { font-size: 12px; color: var(--text-hint); }
+
+  .content { flex: 1; padding: 2rem; overflow-y: auto; max-width: 960px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; }
+  .page-header h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+
+  /* BUTTONS */
+  .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; transition: background 0.12s, opacity 0.12s; white-space: nowrap; }
+  .btn svg { flex-shrink: 0; }
+  .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg); border-color: var(--border-hover); }
+  .btn-solid { background: var(--accent); color: var(--accent-fg); border: 1px solid var(--accent); }
+  .btn-solid:hover { opacity: 0.82; }
+  .btn-danger { background: var(--danger-bg); border: 1px solid #f5c6c2; color: var(--danger); }
+  .btn-danger:hover { background: #fbe8e7; }
+  .btn-ai { background: #1a1464; color: #fff; border: none; }
+  .btn-ai:hover { opacity: 0.85; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.75rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+
+  /* CARDS */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .card:hover { border-color: var(--border-hover); box-shadow: var(--shadow); }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .card-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; }
+
+  /* BADGES */
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 600; letter-spacing: 0.2px; }
+  .badge-rascunho { background: var(--badge-rascunho-bg); color: var(--badge-rascunho-fg); }
+  .badge-revisao { background: var(--badge-revisao-bg); color: var(--badge-revisao-fg); }
+  .badge-aprovado { background: var(--badge-aprovado-bg); color: var(--badge-aprovado-fg); }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+  .empty-state svg { margin-bottom: 1rem; opacity: 0.3; }
+  .empty-state p { font-size: 14px; margin-bottom: 1.25rem; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1rem; z-index: 200; overflow-y: auto; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); width: 100%; max-width: 560px; padding: 1.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 1.25rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 500; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--bg); color: var(--text); outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { min-height: 80px; resize: vertical; line-height: 1.6; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+  /* DETAIL */
+  .detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .detail-header h2 { font-size: 19px; font-weight: 700; flex: 1; min-width: 0; letter-spacing: -0.3px; }
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .info-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+  .info-item label { font-size: 11px; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+  .info-item span { font-size: 14px; color: var(--text); font-weight: 500; }
+
+  .roteiro-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; }
+  .roteiro-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .roteiro-section-header span { font-size: 15px; font-weight: 600; }
+  .roteiro-box { font-size: 14px; line-height: 1.85; color: var(--text); white-space: pre-wrap; min-height: 80px; }
+  .roteiro-empty { color: var(--text-hint); font-style: italic; font-size: 14px; }
+  .roteiro-edit-ta { width: 100%; min-height: 360px; font-size: 14px; line-height: 1.85; resize: vertical; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-family: inherit; outline: none; }
+  .roteiro-edit-ta:focus { border-color: var(--accent); }
+  .edit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+
+  .loading-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--info-bg); border-radius: var(--radius-sm); font-size: 14px; color: var(--info-fg); margin-top: 1rem; border: 1px solid #c5d8f8; }
+  .spinner { width: 18px; height: 18px; border: 2px solid #c5d8f8; border-top-color: var(--info-fg); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section-divider { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 1rem; margin-top: 1.5rem; }
+
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .content { padding: 1rem; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="config-screen">
+  <div class="config-wrap">
+    <div class="config-box">
+      <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8z"/><path d="M8 21h8M12 17v4"/></svg>
+        Roterizador
+      </h1>
+      <p>Sistema de roteirização para vídeos de redes sociais. Cole suas credenciais do Supabase para começar.</p>
+      <div class="field"><label>Project URL</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co" /></div>
+      <div class="field"><label>Anon Key</label><input type="password" id="sb-key" placeholder="eyJhbGci..." /></div>
+      <button class="btn-enter" onclick="initApp()">Entrar no sistema</button>
+      <p class="config-error" id="config-error"></p>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8z"/><path d="M8 21h8M12 17v4"/></svg>
+        Roterizador
+      </div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" id="nav-clientes" onclick="showPage('clientes')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clientes
+      </div>
+      <div class="nav-item" id="nav-projetos" onclick="showPage('projetos')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Projetos
+      </div>
+      <div class="sidebar-bottom"><span>Conectado ao Supabase</span></div>
+    </div>
+    <div class="content" id="main-content"></div>
+  </div>
+</div>
+
+<div id="modal-container"></div>
+
+<script>
+let SB_URL = '', SB_KEY = '';
+let clientes = [], projetos = [];
+let currentPage = 'dashboard';
+let editingRoteiro = false;
+
+async function sbFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : (method === 'PATCH' ? 'return=representation' : '')
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : [];
+}
+
+async function initApp() {
+  SB_URL = document.getElementById('sb-url').value.trim().replace(/\/$/, '');
+  SB_KEY = document.getElementById('sb-key').value.trim();
+  if (!SB_URL || !SB_KEY) { document.getElementById('config-error').textContent = 'Preencha os dois campos.'; return; }
+  try {
+    clientes = await sbFetch('clientes?order=criado_em.desc');
+    projetos = await sbFetch('projetos?order=criado_em.desc');
+    document.getElementById('config-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    showPage('dashboard');
+  } catch(e) {
+    document.getElementById('config-error').textContent = 'Erro ao conectar. Verifique as credenciais.';
+  }
+}
+
+async function loadData() {
+  clientes = await sbFetch('clientes?order=criado_em.desc');
+  projetos = await sbFetch('projetos?order=criado_em.desc');
+}
+
+function showPage(page) {
+  currentPage = page;
+  editingRoteiro = false;
+  ['dashboard','clientes','projetos'].forEach(p => {
+    document.getElementById('nav-'+p).classList.toggle('active', p === page);
+  });
+  const c = document.getElementById('main-content');
+  if (page === 'dashboard') renderDashboard(c);
+  else if (page === 'clientes') renderClientes(c);
+  else if (page === 'projetos') renderProjetos(c);
+}
+
+function statusLabel(s) {
+  return s === 'aprovado' ? 'Aprovado' : s === 'revisao' ? 'Em revisão' : 'Rascunho';
+}
+
+function projetoCard(p) {
+  const cl = clientes.find(c => c.id === p.cliente_id);
+  return `<div class="card" onclick="showProjetoDetail('${p.id}')">
+    <div class="card-title">${esc(p.titulo)}</div>
+    <div class="card-sub">${cl ? esc(cl.nome) : 'Cliente removido'} · ${esc(p.plataforma||'')}</div>
+    <div class="card-footer">
+      <span class="badge badge-${p.status||'rascunho'}">${statusLabel(p.status)}</span>
+      <span style="font-size:12px; color: var(--text-muted);">${esc(p.duracao_alvo||'')}</span>
+    </div>
+  </div>`;
+}
+
+function clienteCard(cl) {
+  const n = projetos.filter(p => p.cliente_id === cl.id).length;
+  return `<div class="card" onclick="showClienteDetail('${cl.id}')">
+    <div class="card-title">${esc(cl.nome)}</div>
+    <div class="card-sub">${esc(cl.empresa||'Sem empresa')}</div>
+    <div class="card-footer">
+      <span style="font-size:12px; color: var(--text-muted);">${n} projeto(s)</span>
+      ${cl.tom_de_voz ? `<span class="badge badge-rascunho">${esc(cl.tom_de_voz)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderDashboard(c) {
+  const total = projetos.length;
+  const aprovados = projetos.filter(p => p.status === 'aprovado').length;
+  const emRevisao = projetos.filter(p => p.status === 'revisao').length;
+  c.innerHTML = `
+    <div class="page-header">
+      <h2>Dashboard</h2>
+      <button class="btn btn-solid" onclick="showModal('projeto')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo projeto
+      </button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total projetos</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card"><div class="stat-label">Aprovados</div><div class="stat-value">${aprovados}</div></div>
+      <div class="stat-card"><div class="stat-label">Em revisão</div><div class="stat-value">${emRevisao}</div></div>
+    </div>
+    <div class="section-divider">Projetos recentes</div>
+    ${projetos.length === 0
+      ? `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Nenhum projeto ainda.</p><button class="btn btn-outline" onclick="showModal('projeto')">Criar primeiro projeto</button></div>`
+      : `<div class="cards-grid">${projetos.slice(0,6).map(projetoCard).join('')}</div>`}
+  `;
+}
+
+function renderClientes(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <h2>Clientes</h2>
+      <button class="btn btn-solid" onclick="showModal('cliente')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo cliente
+      </button>
+    </div>
+    ${clientes.length === 0
+      ? `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>Nenhum cliente cadastrado.</p><button class="btn btn-outline" onclick="showModal('cliente')">Cadastrar cliente</button></div>`
+      : `<div class="cards-grid">${clientes.map(clienteCard).join('')}</div>`}
+  `;
+}
+
+function renderProjetos(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <h2>Projetos</h2>
+      <button class="btn btn-solid" onclick="showModal('projeto')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo projeto
+      </button>
+    </div>
+    ${projetos.length === 0
+      ? `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Nenhum projeto ainda.</p><button class="btn btn-outline" onclick="showModal('projeto')">Criar primeiro projeto</button></div>`
+      : `<div class="cards-grid">${projetos.map(projetoCard).join('')}</div>`}
+  `;
+}
+
+function showModal(type, data=null) {
+  const mc = document.getElementById('modal-container');
+  if (type === 'cliente') {
+    mc.innerHTML = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+      <h3>${data ? 'Editar cliente' : 'Novo cliente'}</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Nome *</label><input id="f-nome" type="text" value="${esc(data?.nome||'')}" /></div>
+        <div class="form-group"><label>Empresa</label><input id="f-empresa" type="text" value="${esc(data?.empresa||'')}" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tom de voz</label><input id="f-tom" type="text" placeholder="ex: descontraído, jovem..." value="${esc(data?.tom_de_voz||'')}" /></div>
+        <div class="form-group"><label>Público-alvo</label><input id="f-publico" type="text" value="${esc(data?.publico_alvo||'')}" /></div>
+      </div>
+      <div class="form-group"><label>Cores da marca</label><input id="f-cores" type="text" placeholder="ex: azul e branco" value="${esc(data?.cores_da_marca||'')}" /></div>
+      <div class="form-group"><label>Referências de estilo</label><textarea id="f-refs">${esc(data?.referencias_estilo||'')}</textarea></div>
+      <div class="form-group"><label>Observações</label><textarea id="f-obs">${esc(data?.observacoes||'')}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-solid" onclick="saveCliente(${data ? `'${data.id}'` : 'null'})">Salvar</button>
+      </div>
+    </div></div>`;
+  } else if (type === 'projeto') {
+    const opts = clientes.map(cl => `<option value="${cl.id}" ${data?.cliente_id===cl.id?'selected':''}>${esc(cl.nome)}</option>`).join('');
+    mc.innerHTML = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+      <h3>${data ? 'Editar projeto' : 'Novo projeto'}</h3>
+      <div class="form-group"><label>Título *</label><input id="f-titulo" type="text" value="${esc(data?.titulo||'')}" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Cliente *</label><select id="f-cliente"><option value="">Selecione...</option>${opts}</select></div>
+        <div class="form-group"><label>Plataforma</label>
+          <select id="f-plat">
+            <option ${data?.plataforma==='Reels'?'selected':''}>Reels</option>
+            <option ${data?.plataforma==='TikTok'?'selected':''}>TikTok</option>
+            <option ${data?.plataforma==='YouTube Shorts'?'selected':''}>YouTube Shorts</option>
+            <option ${data?.plataforma==='Stories'?'selected':''}>Stories</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Duração alvo</label><input id="f-dur" type="text" placeholder="ex: 30s, 1min" value="${esc(data?.duracao_alvo||'')}" /></div>
+        <div class="form-group"><label>Status</label>
+          <select id="f-status">
+            <option value="rascunho" ${(!data||data?.status==='rascunho')?'selected':''}>Rascunho</option>
+            <option value="revisao" ${data?.status==='revisao'?'selected':''}>Em revisão</option>
+            <option value="aprovado" ${data?.status==='aprovado'?'selected':''}>Aprovado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Objetivo do vídeo</label><textarea id="f-objetivo">${esc(data?.objetivo||'')}</textarea></div>
+      <div class="form-group"><label>Mensagem principal</label><textarea id="f-msg">${esc(data?.mensagem_principal||'')}</textarea></div>
+      <div class="form-group"><label>CTA desejado</label><input id="f-cta" type="text" placeholder="ex: Siga o perfil, Entre em contato" value="${esc(data?.cta||'')}" /></div>
+      <div class="form-group"><label>Referências / mood</label><textarea id="f-refp">${esc(data?.referencias||'')}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-solid" onclick="saveProjeto(${data ? `'${data.id}'` : 'null'})">Salvar</button>
+      </div>
+    </div></div>`;
+  }
+}
+
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+
+async function saveCliente(id) {
+  const payload = {
+    nome: document.getElementById('f-nome').value.trim(),
+    empresa: document.getElementById('f-empresa').value.trim(),
+    tom_de_voz: document.getElementById('f-tom').value.trim(),
+    publico_alvo: document.getElementById('f-publico').value.trim(),
+    cores_da_marca: document.getElementById('f-cores').value.trim(),
+    referencias_estilo: document.getElementById('f-refs').value.trim(),
+    observacoes: document.getElementById('f-obs').value.trim(),
+  };
+  if (!payload.nome) { alert('Nome obrigatório'); return; }
+  if (id && id !== 'null') await sbFetch(`clientes?id=eq.${id}`, 'PATCH', payload);
+  else await sbFetch('clientes', 'POST', payload);
+  await loadData(); closeModal(); showPage(currentPage);
+}
+
+async function saveProjeto(id) {
+  const payload = {
+    titulo: document.getElementById('f-titulo').value.trim(),
+    cliente_id: document.getElementById('f-cliente').value,
+    plataforma: document.getElementById('f-plat').value,
+    duracao_alvo: document.getElementById('f-dur').value.trim(),
+    status: document.getElementById('f-status').value,
+    objetivo: document.getElementById('f-objetivo').value.trim(),
+    mensagem_principal: document.getElementById('f-msg').value.trim(),
+    cta: document.getElementById('f-cta').value.trim(),
+    referencias: document.getElementById('f-refp').value.trim(),
+  };
+  if (!payload.titulo || !payload.cliente_id) { alert('Título e cliente são obrigatórios'); return; }
+  if (id && id !== 'null') await sbFetch(`projetos?id=eq.${id}`, 'PATCH', payload);
+  else await sbFetch('projetos', 'POST', payload);
+  await loadData(); closeModal(); showPage(currentPage);
+}
+
+async function deleteProjeto(id) {
+  if (!confirm('Excluir este projeto?')) return;
+  await sbFetch(`projetos?id=eq.${id}`, 'DELETE');
+  await loadData(); showPage('projetos');
+}
+
+async function deleteCliente(id) {
+  if (!confirm('Excluir este cliente e todos os seus projetos?')) return;
+  await sbFetch(`clientes?id=eq.${id}`, 'DELETE');
+  await loadData(); showPage('clientes');
+}
+
+function showClienteDetail(id) {
+  const cl = clientes.find(c => c.id === id);
+  const projsCl = projetos.filter(p => p.cliente_id === id);
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="detail-header">
+      <button class="btn btn-outline" onclick="showPage('clientes')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <h2>${esc(cl.nome)}</h2>
+      <button class="btn btn-outline" onclick='showModal("cliente", clientes.find(x=>x.id==="${id}"))'>Editar</button>
+      <button class="btn btn-danger" onclick="deleteCliente('${id}')">Excluir</button>
+    </div>
+    <div class="info-grid">
+      <div class="info-item"><label>Empresa</label><span>${esc(cl.empresa||'—')}</span></div>
+      <div class="info-item"><label>Tom de voz</label><span>${esc(cl.tom_de_voz||'—')}</span></div>
+      <div class="info-item"><label>Público-alvo</label><span>${esc(cl.publico_alvo||'—')}</span></div>
+      <div class="info-item"><label>Cores da marca</label><span>${esc(cl.cores_da_marca||'—')}</span></div>
+    </div>
+    ${cl.referencias_estilo ? `<div class="form-group" style="margin-bottom:1.5rem;"><label style="font-size:12px; color:var(--text-muted); font-weight:500;">Referências de estilo</label><p style="font-size:14px; margin-top:4px;">${esc(cl.referencias_estilo)}</p></div>` : ''}
+    <div class="section-divider">Projetos deste cliente</div>
+    <div style="margin-bottom:1rem;"><button class="btn btn-outline" onclick="showModal('projeto')">+ Novo projeto</button></div>
+    ${projsCl.length === 0 ? '<p style="color:var(--text-muted); font-size:14px;">Nenhum projeto ainda.</p>' : `<div class="cards-grid">${projsCl.map(projetoCard).join('')}</div>`}
+  `;
+}
+
+function showProjetoDetail(id) {
+  const p = projetos.find(x => x.id === id);
+  const cl = clientes.find(c => c.id === p.cliente_id);
+  editingRoteiro = false;
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="detail-header">
+      <button class="btn btn-outline" onclick="showPage('projetos')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
+      <h2>${esc(p.titulo)}</h2>
+      <span class="badge badge-${p.status||'rascunho'}">${statusLabel(p.status)}</span>
+      <button class="btn btn-outline" onclick='showModal("projeto", projetos.find(x=>x.id==="${id}"))'>Editar</button>
+      <button class="btn btn-danger" onclick="deleteProjeto('${id}')">Excluir</button>
+    </div>
+    <div class="info-grid">
+      <div class="info-item"><label>Cliente</label><span>${esc(cl?.nome||'—')}</span></div>
+      <div class="info-item"><label>Plataforma</label><span>${esc(p.plataforma||'—')}</span></div>
+      <div class="info-item"><label>Duração alvo</label><span>${esc(p.duracao_alvo||'—')}</span></div>
+      <div class="info-item"><label>CTA</label><span>${esc(p.cta||'—')}</span></div>
+    </div>
+    ${p.objetivo ? `<div class="form-group" style="margin-bottom:10px;"><label style="font-size:12px;color:var(--text-muted);font-weight:500;">Objetivo</label><p style="font-size:14px;margin-top:4px;">${esc(p.objetivo)}</p></div>` : ''}
+    ${p.mensagem_principal ? `<div class="form-group" style="margin-bottom:10px;"><label style="font-size:12px;color:var(--text-muted);font-weight:500;">Mensagem principal</label><p style="font-size:14px;margin-top:4px;">${esc(p.mensagem_principal)}</p></div>` : ''}
+
+    <div class="roteiro-section">
+      <div class="roteiro-section-header">
+        <span>Roteiro</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" id="btn-editar-rot" onclick="toggleEditRoteiro('${id}')">Editar</button>
+          <button class="btn btn-ai" onclick="gerarRoteiro('${id}')">✦ Gerar com IA</button>
+        </div>
+      </div>
+      <div id="roteiro-area">
+        ${p.roteiro
+          ? `<div class="roteiro-box">${esc(p.roteiro)}</div>`
+          : `<div class="roteiro-empty">Nenhum roteiro gerado ainda. Clique em "Gerar com IA" para criar automaticamente.</div>`}
+      </div>
+      <div id="loading-area"></div>
+    </div>
+  `;
+}
+
+function toggleEditRoteiro(id) {
+  const p = projetos.find(x => x.id === id);
+  editingRoteiro = !editingRoteiro;
+  const area = document.getElementById('roteiro-area');
+  const btnEdit = document.getElementById('btn-editar-rot');
+  if (editingRoteiro) {
+    area.innerHTML = `<textarea class="roteiro-edit-ta" id="roteiro-edit-ta">${esc(p.roteiro||'')}</textarea>
+      <div class="edit-actions">
+        <button class="btn btn-outline" onclick="toggleEditRoteiro('${id}')">Cancelar</button>
+        <button class="btn btn-solid" onclick="saveRoteiro('${id}')">Salvar roteiro</button>
+      </div>`;
+    if (btnEdit) btnEdit.style.display = 'none';
+  } else {
+    area.innerHTML = p.roteiro
+      ? `<div class="roteiro-box">${esc(p.roteiro)}</div>`
+      : `<div class="roteiro-empty">Nenhum roteiro gerado ainda.</div>`;
+    if (btnEdit) btnEdit.style.display = '';
+  }
+}
+
+async function saveRoteiro(id) {
+  const rot = document.getElementById('roteiro-edit-ta').value;
+  await sbFetch(`projetos?id=eq.${id}`, 'PATCH', { roteiro: rot });
+  await loadData();
+  editingRoteiro = false;
+  showProjetoDetail(id);
+}
+
+async function gerarRoteiro(id) {
+  const p = projetos.find(x => x.id === id);
+  const cl = clientes.find(c => c.id === p.cliente_id);
+  const la = document.getElementById('loading-area');
+  la.innerHTML = `<div class="loading-bar"><div class="spinner"></div>Gerando roteiro com IA, aguarde...</div>`;
+
+  const prompt = `Você é um roteirista especialista em vídeos curtos para redes sociais (Reels, TikTok, YouTube Shorts). Crie um roteiro detalhado e criativo para o seguinte projeto:
+
+PERFIL DO CLIENTE:
+- Nome: ${cl?.nome || 'Não informado'}
+- Empresa: ${cl?.empresa || ''}
+- Tom de voz: ${cl?.tom_de_voz || ''}
+- Público-alvo: ${cl?.publico_alvo || ''}
+- Cores da marca: ${cl?.cores_da_marca || ''}
+- Referências de estilo: ${cl?.referencias_estilo || ''}
+
+BRIEFING DO PROJETO:
+- Título: ${p.titulo}
+- Plataforma: ${p.plataforma || ''}
+- Duração alvo: ${p.duracao_alvo || ''}
+- Objetivo: ${p.objetivo || ''}
+- Mensagem principal: ${p.mensagem_principal || ''}
+- CTA desejado: ${p.cta || ''}
+- Referências/mood: ${p.referencias || ''}
+
+Crie um roteiro estruturado com:
+- Cada cena numerada (Cena 1, Cena 2, etc.)
+- Descrição visual da cena (o que aparece na tela)
+- Fala, narração ou sugestão de legenda/texto
+- Duração estimada da cena em segundos
+- Ao final, inclua o CTA e observações gerais de estilo/mood
+
+Formate de forma clara, organizada e em português.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const roteiro = data.content.map(b => b.text || '').join('');
+    await sbFetch(`projetos?id=eq.${id}`, 'PATCH', { roteiro });
+    await loadData();
+    la.innerHTML = '';
+    showProjetoDetail(id);
+  } catch(e) {
+    la.innerHTML = `<div class="loading-bar" style="background:var(--danger-bg);color:var(--danger);border-color:#f5c6c2;">Erro ao gerar roteiro. Tente novamente.</div>`;
+  }
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

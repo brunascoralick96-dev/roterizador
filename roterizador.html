@@ -154,8 +154,10 @@
         Roterizador
       </h1>
       <p>Sistema de roteirização para vídeos de redes sociais. Cole suas credenciais do Supabase para começar.</p>
-      <div class="field"><label>Project URL</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co" /></div>
-      <div class="field"><label>Anon Key</label><input type="password" id="sb-key" placeholder="eyJhbGci..." /></div>
+      <div class="field"><label>Project URL (Supabase)</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co" /></div>
+      <div class="field"><label>Anon Key (Supabase)</label><input type="password" id="sb-key" placeholder="eyJhbGci..." /></div>
+      <div class="field"><label>Chave da API Anthropic</label><input type="password" id="anthropic-key" placeholder="sk-ant-..." /></div>
+      <p style="font-size:12px; color:var(--text-hint); margin-top:-6px; margin-bottom:1rem;">Necessária para gerar roteiros com IA. Acesse <a href="https://console.anthropic.com" target="_blank" style="color:var(--text-muted);">console.anthropic.com</a></p>
       <button class="btn-enter" onclick="initApp()">Entrar no sistema</button>
       <p class="config-error" id="config-error"></p>
     </div>
@@ -190,7 +192,7 @@
 <div id="modal-container"></div>
 
 <script>
-let SB_URL = '', SB_KEY = '';
+let SB_URL = '', SB_KEY = '', ANTHROPIC_KEY = '';
 let clientes = [], projetos = [];
 let currentPage = 'dashboard';
 let editingRoteiro = false;
@@ -215,7 +217,8 @@ async function sbFetch(path, method='GET', body=null) {
 async function initApp() {
   SB_URL = document.getElementById('sb-url').value.trim().replace(/\/$/, '');
   SB_KEY = document.getElementById('sb-key').value.trim();
-  if (!SB_URL || !SB_KEY) { document.getElementById('config-error').textContent = 'Preencha os dois campos.'; return; }
+  ANTHROPIC_KEY = document.getElementById('anthropic-key').value.trim();
+  if (!SB_URL || !SB_KEY) { document.getElementById('config-error').textContent = 'Preencha os campos do Supabase.'; return; }
   try {
     clientes = await sbFetch('clientes?order=criado_em.desc');
     projetos = await sbFetch('projetos?order=criado_em.desc');
@@ -568,7 +571,12 @@ Formate de forma clara, organizada e em português.`;
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
